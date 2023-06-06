@@ -1,5 +1,4 @@
-# CS380Project
-# Project Description
+# Brew Buddy Description
 
 Brew Buddy is an app designed to help any coffee business achieve higher levels of customer satisfaction and therefore higher sales by helping users get better acquainted with that company's products faster. This android app takes in basic user preferences and translates them to recommended products on a menu, taking out much of the longer decision-making process that stops users from getting more complicated (and therefore more expensive) drinks. 
 
