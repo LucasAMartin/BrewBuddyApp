@@ -88,7 +88,7 @@ public class QuestionActivity extends AppCompatActivity {
         fragmentList.add(new question5());
         fragmentList.add(new question6());
         fragmentList.add(new question7());
-        fragmentList.add(new questionSubmit());
+        fragmentList.add(new QuestionSubmit());
         viewPager2Adapter.setData(fragmentList);
         viewPager2.setAdapter(viewPager2Adapter);
     }

@@ -65,6 +65,7 @@ public class CreateAccount extends AppCompatActivity {
                     boolean success = UserService.createAccount(username, password);
                     if (success) {
                         Toast.makeText(getApplicationContext(), "Account created successfully", Toast.LENGTH_SHORT).show();
+                        UserService.setUsername(username);
                         usernameEditText.getText().clear();
                         passwordEditText.getText().clear();
                         confirmPasswordEditText.getText().clear();

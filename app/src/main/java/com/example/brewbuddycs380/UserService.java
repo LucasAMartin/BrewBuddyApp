@@ -1,129 +1,129 @@
+/**
+ * This class represents a user service for creating and managing user accounts.
+ * It provides methods for creating new accounts, logging in, and managing user preferences.
+ * The service interacts with a MySQL database using JDBC for data storage and retrieval.
+ *
+ * <p>To use this service, you need to set the connection details for the MySQL server by modifying
+ * the URL, USER, and PASS constants in this class.
+ *
+ * <p>The service uses executor and future objects to perform database operations in separate threads
+ * to avoid blocking the main network thread. The executor is shut down after each operation.
+ *
+ * <p>The service also provides helper methods for hashing passwords using the SHA-512 algorithm.
+ */
 package com.example.brewbuddycs380;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+/**
+ * Custom exception class for indicating that an account is already taken.
+ */
 class AccountTakenException extends Exception {
+    /**
+     * Constructs a new AccountTakenException with the specified error message.
+     *
+     * @param message the error message
+     */
     public AccountTakenException(String message) {
         super(message);
     }
 }
 
+/**
+ * Custom exception class for indicating an error in the UserService.
+ */
 class UserServiceException extends Exception {
+    /**
+     * Constructs a new UserServiceException with the specified error message.
+     *
+     * @param message the error message
+     */
     public UserServiceException(String message) {
         super(message);
     }
 }
 
+/**
+ * The UserService class provides methods for creating, managing, and interacting with user accounts.
+ */
 public class UserService {
+    // Connection details for the MySQL server
+    static final String URL = "jdbc:mysql://btouleodk2fbxqykpyko-mysql.services.clever-cloud.com:3306/btouleodk2fbxqykpyko";
+    static final String USER = "usy1lqwxdmnjkhyy";
+    static final String PASS = "PafizbM2VI0g4D4Etsy3";
+    private static String userName;
+    public static ArrayList<Coffee> shoppingCart = new ArrayList<>();
 
+
+    /**
+     * Sets the username for the current session if it's not already set.
+     *
+     * @param input the username to set
+     */
+    public static void setUsername(String input) {
+        if (userName == null)
+            userName = input;
+    }
+
+    /**
+     * Gets the username for the current session.
+     *
+     * @return the username
+     */
     public static String getUsername() {
-        return savedUsername;
+        return userName;
     }
 
-    private volatile static String savedUsername = "";
-    private volatile static String savedPrefs = "";
-
-    public  static LoggedInState getLoggedInState() {
-        return state;
-    }
-
-    private volatile static LoggedInState state = LoggedInState.notLoggedIn;
-
-    public volatile static ArrayList<Coffee> shoppingCart = new ArrayList<Coffee>();
-
-
-    /**
-     * logged in state state machine function
-     * if logged in but haven't retrived prefs, retrieves them updates state
-     * if already retrieved prefs, returns them
-     * otherwise, returns empty string
-     * @return
-     */
-    public static String getPrefs(){
-        System.out.println("runnig getprefs" + (state==LoggedInState.loggedInNoPrefs));
-        if(state==LoggedInState.loggedInPrefsRetrieved){
-            System.out.println("already retrieved");
-            return savedPrefs;
-        }else if(state==LoggedInState.loggedInNoPrefs||state==LoggedInState.loggedInHavePrefs){
-            System.out.println("logging in no prefs getting them");
-            savedPrefs = ClientAPI.getAPI().getPreferences(savedUsername);
-
-            if(savedPrefs=="null"||savedPrefs=="NULL"||savedPrefs==""||savedPrefs=="Null"){
-                //if there aren't any prefs saved for the user
-                //only called if a user created an account and then never submitted their questionaire
-                state=LoggedInState.loggedInNoPrefs;
-                System.out.println("didn't get prefs");
-                //makes sure saved prefs is back to being our actual null state
-                savedPrefs="";
-
-            }else {
-                //if they do have non null preferences
-                state = LoggedInState.loggedInPrefsRetrieved;
-                System.out.println("successfully retrieved prefs");
-            }
-            return savedPrefs;
-        }else{
-            System.out.println("else??? "+state);
-            return "";
-        }
-    }
-
-    /**
-     * updates preferences in the database in a thread, and updates the preferences variable in userservice.
-     * @param preferences
-     * @return
-     */
-    public static boolean updatePreferences(String preferences){
-        new Thread(() -> {
-            System.out.println("running anonymous thread");
-            System.out.println("api req is: "+ClientAPI.getAPI().setPreferences(UserService.getUsername(), preferences));
-        }).start();
-        savedPrefs=preferences;
-        state=LoggedInState.loggedInPrefsRetrieved;
-        return true;
-    }
-    /**
-     * @return whether the user has taken the preferences test before and has some on file
-     */
-    public static boolean haveRecordedPrefs(){
-        return state==LoggedInState.loggedInHavePrefs;
-    }
-    /**
-     * @return whether the user is logged in
-     */
-    public static boolean isLoggedIn() {
-        return loggedIn;
-    }
-
-    private volatile static boolean loggedIn = false;
     /**
      * Creates a new user account with the given username and password.
      *
-     * @param username the username for the account
-     * @param password the password for the account
-     * @return true if the account is successfully created, false otherwise
-     * @throws AccountTakenException if the username is already taken
-     * @throws UserServiceException if an error occurs while creating the account
+     * @param username the username for the new account
+     * @param password the password for the new account
+     * @return true if the account was created successfully, false otherwise
+     * @throws AccountTakenException  if the username is already taken
+     * @throws UserServiceException  if an error occurs during the account creation process
      */
-    public static boolean createAccount(final String username, final String password) throws AccountTakenException, UserServiceException {
+    public static boolean createAccount(final String username, final String password)
+            throws AccountTakenException, UserServiceException {
         // Have to use executor because database won't connect on main network thread for some reason
         // This object makes a new thread just for the database
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Future<Boolean> future = executor.submit(() -> {
-            String hashedPassword = hashPassword(password);
-            boolean success =  ClientAPI.getAPI().createUser(username, hashedPassword);
-            if(success){
-                loggedIn=true;
-                savedUsername=username;
+            try (Connection connection = DriverManager.getConnection(URL, USER, PASS)) {
+                // Check if the username is already taken
+                String checkSql = "SELECT * FROM logins WHERE username = ?";
+                PreparedStatement checkStatement = connection.prepareStatement(checkSql);
+                checkStatement.setString(1, username);
+                ResultSet checkResultSet = checkStatement.executeQuery();
+                if (checkResultSet.next()) {
+                    // Username is already taken
+                    throw new AccountTakenException("Username is already taken");
+                }
 
+                // Hash the password using the SHA-512 algorithm
+                String hashedPassword = hashPassword(password);
+                // SQL statement to insert a new record into the logins table
+                String sql = "INSERT INTO logins (username, password) VALUES (?, ?)";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setString(1, username);
+                statement.setString(2, hashedPassword);
+                int rowsInserted = statement.executeUpdate();
+                return rowsInserted > 0;
+            } catch (SQLException e) {
+                throw new UserServiceException("SQLException: " + e.getMessage());
+            } catch (NoSuchAlgorithmException e) {
+                throw new UserServiceException("NoSuchAlgorithmException: " + e.getMessage());
             }
-            return success;
         });
         try {
             return future.get();
@@ -140,39 +140,33 @@ public class UserService {
     }
 
     /**
-     * Logs in with the given username and password.
+     * Saves user preferences for the specified username.
      *
-     * @param username the username for the account
-     * @param password the password for the account
-     * @return true if the login is successful, false otherwise
-     * @throws UserServiceException if an error occurs while logging in
+     * @param username    the username for which to save the preferences
+     * @param preferences the preferences to save
+     * @return true if the preferences were saved successfully, false otherwise
+     * @throws UserServiceException if an error occurs during the preference saving process
      */
-    public static boolean login(final String username, final String password) throws UserServiceException {
+    public static boolean saveUserPreferences(final String username, final String preferences)
+            throws UserServiceException {
+        // Have to use executor because database won't connect on main network thread for some reason
+        // This object makes a new thread just for the database
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Future<Boolean> future = executor.submit(() -> {
-            String hashedPassword = null;
-            try {
-                hashedPassword = hashPassword(password);
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException(e);
+            try (Connection connection = DriverManager.getConnection(URL, USER, PASS)) {
+                // SQL statement to update the userPrefs column for the given username
+                String sql = "UPDATE logins SET userPrefs = ? WHERE username = ?";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setString(1, preferences);
+                statement.setString(2, username);
+                int rowsUpdated = statement.executeUpdate();
+                return rowsUpdated > 0;
+            } catch (SQLException e) {
+                throw new UserServiceException("SQLException: " + e.getMessage());
             }
-
-            boolean loggedIn = ClientAPI.getAPI().login(username, hashedPassword);
-            savedUsername = username;
-            state=LoggedInState.loggedInNoPrefs;
-            getPrefs();
-            return loggedIn;
         });
         try {
-            if(future.get()){
-                System.out.println("Updating user state: "+ UserService.getLoggedInState());
-
-                loggedIn=true;
-                return true;
-            }
-            savedUsername = "";
-            return false;
-
+            return future.get();
         } catch (Exception e) {
             if (e.getCause() instanceof UserServiceException) {
                 throw (UserServiceException) e.getCause();
@@ -183,6 +177,100 @@ public class UserService {
         }
     }
 
+    /**
+     * Retrieves the user preferences for the specified username.
+     *
+     * @param username the username for which to retrieve the preferences
+     * @return the user preferences if found, or null if not found
+     * @throws UserServiceException if an error occurs during the preference retrieval process
+     */
+    public static String getUserPreferences(final String username) throws UserServiceException {
+        // Have to use executor because database won't connect on main network thread for some reason
+        // This object makes a new thread just for the database
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<String> future = executor.submit(() -> {
+            try (Connection connection = DriverManager.getConnection(URL, USER, PASS)) {
+                // SQL statement to select the userPrefs column for the given username
+                String sql = "SELECT userPrefs FROM logins WHERE username = ?";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setString(1, username);
+                ResultSet resultSet = statement.executeQuery();
+                if (resultSet.next()) {
+                    return resultSet.getString("userPrefs");
+                } else {
+                    return null;
+                }
+            } catch (SQLException e) {
+                throw new UserServiceException("SQLException: " + e.getMessage());
+            }
+        });
+        try {
+            return future.get();
+        } catch (Exception e) {
+            if (e.getCause() instanceof UserServiceException) {
+                throw (UserServiceException) e.getCause();
+            }
+            throw new UserServiceException("Unknown exception: " + e.getMessage());
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    /**
+     * Logs in with the given username and password.
+     *
+     * @param username the username to log in
+     * @param password the password to log in
+     * @return true if the login is successful, false otherwise
+     * @throws UserServiceException if an error occurs during the login process
+     */
+    public static boolean login(final String username, final String password) throws UserServiceException {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<Boolean> future = executor.submit(() -> {
+            try (Connection connection = DriverManager.getConnection(URL, USER, PASS)) {
+                // Hash the password using the SHA-512 algorithm
+                String hashedPassword = hashPassword(password);
+                // SQL statement to query the logins table for a record with the given username and hashed password
+                String sql = "SELECT * FROM logins WHERE username = ? AND password = ?";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setString(1, username);
+                statement.setString(2, hashedPassword);
+                ResultSet resultSet = statement.executeQuery();
+                return resultSet.next();
+            } catch (SQLException e) {
+                throw new UserServiceException("SQLException: " + e.getMessage());
+            } catch (NoSuchAlgorithmException e) {
+                throw new UserServiceException("NoSuchAlgorithmException: " + e.getMessage());
+            }
+        });
+        try {
+            return future.get();
+        } catch (Exception e) {
+            if (e.getCause() instanceof UserServiceException) {
+                throw (UserServiceException) e.getCause();
+            }
+            throw new UserServiceException("Unknown exception: " + e.getMessage());
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    /**
+     * Hashes the given password using the SHA-512 algorithm.
+     *
+     * @param password the password to hash
+     * @return the hashed password
+     * @throws NoSuchAlgorithmException if the SHA-512 algorithm is not available
+     */
+    private static String hashPassword(String password) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-512");
+        byte[] hashedBytes = digest.digest(password.getBytes());
+        StringBuilder sb = new StringBuilder();
+        for (byte b : hashedBytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
 
     /**
      * adds coffee to the cart
@@ -197,44 +285,9 @@ public class UserService {
      * @return
      */
     public static boolean checkOut(){
-        if(shoppingCart.size()==0)return false;
-        Map<Properties,Integer> prefs = CoffeeRecommender.stringToPreferencesAndWeights(getPrefs());
-
-        for(Coffee i : shoppingCart) {
-            CoffeeRecommender.updatePrefWeightHashmapWithCoffee(prefs, i);
-        }
+        if(shoppingCart.size()==0)
+            return false;
         shoppingCart.clear();
-        String oldPrefs = getPrefs(), newPrefs = CoffeeRecommender.preferencWeightMapToString(prefs);
-        System.out.println("old: "+oldPrefs+" new: "+newPrefs);
-        updatePreferences(CoffeeRecommender.preferencWeightMapToString(prefs));
         return true;
     }
-    /**
-     * Helper method to hash a password using the SHA-512 algorithm.
-     *
-     * @param password the password to be hashed
-     * @return the hashed password as a hexadecimal string
-     * @throws NoSuchAlgorithmException if the SHA-512 algorithm is not available
-     */
-    private static String hashPassword(String password) throws NoSuchAlgorithmException {
-        // Get an instance of the SHA-512 message digest
-        MessageDigest md = MessageDigest.getInstance("SHA-512");
-        md.update(password.getBytes());
-
-        byte[] digest = md.digest();
-        StringBuilder sb = new StringBuilder();
-        // Convert each byte of the message digest to a two-digit hexadecimal string
-        for (byte b : digest) {
-            sb.append(String.format("%02x", b));
-        }
-        // Return the resulting hexadecimal string
-        return sb.toString();
-    }
-
-
-    public UserService(){
-        System.out.println("constructing user service");
-    }
-
 }
-

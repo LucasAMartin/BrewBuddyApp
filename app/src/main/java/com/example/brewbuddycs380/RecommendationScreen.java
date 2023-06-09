@@ -1,15 +1,17 @@
 package com.example.brewbuddycs380;
 
 import android.content.Intent;
-import android.os.Bundle;
+import android.os.Build;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import androidx.core.content.ContextCompat;
 
-import java.util.EnumSet;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * An activity that displays coffee recommendations based on user preferences in the BrewBuddy app.
@@ -17,6 +19,7 @@ import java.util.Random;
 public class RecommendationScreen extends AppCompatActivity {
 
     private Coffee lastRecommendation;
+
     /**
      * Called when the activity is created.
      * Sets the layout for the activity and initializes the views.
@@ -26,6 +29,8 @@ public class RecommendationScreen extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Changes the status bar color to enhance the visual appearance
+        getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.statusbar_main));
 
         setContentView(R.layout.activity_reccomendation_screen);
         TextView recommendation = findViewById(R.id.recommendation);
@@ -34,23 +39,26 @@ public class RecommendationScreen extends AppCompatActivity {
         RatingBar ratingBar = findViewById(R.id.ratingBar);
         ratingBar.setRating(4.5F);
 
-        // gets data passed to it from the questionSubmit class
-        // this is selected preferences in the form of an array
-        Properties[] selectedPropertiesArray = (Properties[]) getIntent().getSerializableExtra("selectedProperties");
-        // same preferences, in the form of an enumSet
-        //bug where everything static just does not exist
-        EnumSet<Properties> userPreferences = (EnumSet<Properties>) CoffeeRecommender.stringToUserPreference(UserService.getPrefs());
+        String userPreferencesString = null;
+        try {
+            userPreferencesString = UserService.getUserPreferences(UserService.getUsername());
+        } catch (UserServiceException e) {
+            Toast.makeText(getApplicationContext(), "Preferences network error: not retrieved ", Toast.LENGTH_SHORT).show();
+        }
 
-
+        Set<Properties> userPreferences = CoffeeRecommender.stringToUserPreference(userPreferencesString);
         Coffee topChoice = CoffeeRecommender.recommendTopCoffee(userPreferences);
-        lastRecommendation = topChoice;
         Coffee[] top5Choices = CoffeeRecommender.recommend5Coffee(userPreferences);
         String preferences = CoffeeRecommender.getPreferencesString(userPreferences);
 
-        /**
+        /*
          * Set the text for the recommendation TextView with the top choice coffee and user preferences.
          */
-        recommendation.setText(topChoice.getName() + " with " + preferences );
+        if(preferences.isEmpty()||preferences.equals(" ")){
+            recommendation.setText(topChoice.getName());
+        }else{
+            recommendation.setText(topChoice.getName() + " with " + preferences );
+        }
         description.setText(topChoice.getDescription());
         image.setImageResource(topChoice.getDrawableId());
 
@@ -69,21 +77,25 @@ public class RecommendationScreen extends AppCompatActivity {
                 randomCoffee = top5Choices[randomChoice];
             }
             lastRecommendation = randomCoffee;
-            recommendation.setText(randomCoffee.getName() + " with " + preferences );
+            ratingBar.setRating(3 + (2*(rand.nextFloat())));
+            if(preferences.isEmpty()||preferences.equals(" ")){
+                recommendation.setText(randomCoffee.getName());
+            }else{
+                recommendation.setText(randomCoffee.getName() + " with " + preferences );
+            }
             description.setText(randomCoffee.getDescription());
             image.setImageResource(randomCoffee.getDrawableId());
         });
 
-        //adds whatever coffee is reccommended on the main screen to the cart
+        //adds whatever coffee is recommended on the main screen to the cart
         findViewById(R.id.addToCart).setOnClickListener(v-> {
             UserService.shoppingCart.add(lastRecommendation);
-            Toast.makeText(getApplicationContext(), "Added to cart", Toast.LENGTH_SHORT).show();
-
         });
+
         //goes to the cart
         ImageView cart = findViewById(R.id.cart);
         cart.setOnClickListener(v ->{
-             startActivity(new Intent(this, ShoppingCart.class));
+            startActivity(new Intent(this, ShoppingCart.class));
         });
 
         ImageView home = findViewById(R.id.home);
@@ -94,6 +106,5 @@ public class RecommendationScreen extends AppCompatActivity {
         home.setOnClickListener(v -> {
             startActivity(new Intent(getApplicationContext(), QuestionActivity.class));
         });
-
     }
 }

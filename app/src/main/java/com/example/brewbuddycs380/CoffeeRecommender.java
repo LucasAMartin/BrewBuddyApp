@@ -1,7 +1,6 @@
 package com.example.brewbuddycs380;
 
 import android.widget.ImageView;
-
 import java.util.*;
 
 /**
@@ -12,8 +11,9 @@ enum Properties {
     CREAMY(5), BLACK(6), FOAM(7), NOFOAM(8), DECAF(9), BITTER(10),
     FLAVOR_FRUIT(11), FLAVOR_CHOCOLATE(12), FLAVOR_CARAMEL(13), FLAVOR_VANILLA(14);
 
-
+    // Each property has an index value so it can be converted to a series of numbers to go in the database
     private final int index;
+
     /**
      * Constructs a Properties enum with the given index.
      *
@@ -37,7 +37,7 @@ enum Properties {
  * Define a class to represent a coffee object.
  */
 class Coffee implements Comparable<Coffee> {
-    private  String name; // The name of the coffee
+    private String name; // The name of the coffee
     private String description;
     private int similarityScore; // The similarity score of the coffee with respect to the user's preference
     private Set<Properties> coffeeProperties; // The properties of the coffee
@@ -69,6 +69,7 @@ class Coffee implements Comparable<Coffee> {
     public String getDescription(){
         return description;
     }
+
     /**
      * Sets the similarity score of the coffee.
      *
@@ -90,8 +91,6 @@ class Coffee implements Comparable<Coffee> {
             new Coffee("Flat White", EnumSet.of(Properties.WEAK, Properties.SWEET, Properties.NOFOAM, Properties.CREAMY, Properties.HOT), R.drawable.latte,"A coffee made with espresso and steamed milk. It has a smooth and velvety texture. Flat White is a popular choice for those who enjoy the taste of coffee but prefer a smooth texture. It is typically served hot.")
     };
 
-
-
     /**
      * Constructs a new Coffee object with the specified properties.
      *
@@ -100,7 +99,7 @@ class Coffee implements Comparable<Coffee> {
      * @param drawableId      the drawable ID of the coffee image
      * @param description     the description of the coffee
      */
-    public Coffee(String name, Set<Properties> coffeeProperties,int drawableId, String description) {
+    public Coffee(String name, Set<Properties> coffeeProperties, int drawableId, String description) {
         this.name = name;
         this.coffeeProperties = coffeeProperties;
         this.description = description;
@@ -124,12 +123,14 @@ class Coffee implements Comparable<Coffee> {
     }
 
     /**
+     * Returns the properties of this coffee.
      *
-     * @return the properties of this coffee, as a constant.
+     * @return the properties of this coffee
      */
     public final Set<Properties> getCoffeeProperties(){
         return this.coffeeProperties;
     }
+
     /**
      * Compares this coffee with another coffee based on their similarity scores.
      *
@@ -142,12 +143,7 @@ class Coffee implements Comparable<Coffee> {
     public int compareTo(Coffee coffee) {
         return coffee.similarityScore - this.similarityScore;
     }
-
-    public String toString(){
-        return this.name;
-    }
 }
-
 
 /**
  * Define a class with static methods to recommend coffees based on the user's preference.
@@ -236,7 +232,7 @@ public class CoffeeRecommender {
                     break;
             }
         }
-        // this part cuts off the last comma and space
+        // This part cuts off the last comma and space
         if (sb.length() > 0) {
             sb.setLength(sb.length() - 2);
         }
@@ -253,9 +249,9 @@ public class CoffeeRecommender {
         StringBuilder sb = new StringBuilder();
         for (Properties property : userPreference) {
             sb.append(property.getIndex());
-            sb.append(":1,");
+            sb.append(",");
         }
-        // this part cuts off the last comma
+        // This part cuts off the last comma
         if (sb.length() > 0) {
             sb.setLength(sb.length() - 1);
         }
@@ -269,132 +265,17 @@ public class CoffeeRecommender {
      * @return a set of properties representing the user's preference
      */
     public static Set<Properties> stringToUserPreference(String string) {
-        // Creat en empty set of properties enums
+        // Create an empty set of properties enums
         Set<Properties> userPreference = EnumSet.noneOf(Properties.class);
         String[] indices = string.split(",");
-        int[] intIndicies = new int[indices.length];
-        int[] weights = new int[indices.length];
-        String index = indices[0];
-        System.out.println("String is: "+string);
-        System.out.println("username is: "+ UserService.getUsername());
-        System.out.println("indicies are: "+Arrays.toString(indices));
-        for ( int i = 0; i<indices.length; i++) {
-            index = indices[i];
-            System.out.println("Splitting:"+index+":I is: "+i );
-            String[] indexAndWeight = index.split(":");
-            System.out.println("");
-            //index is the first part
-            intIndicies[i]=Integer.parseInt(indexAndWeight[0]);
-            //weight is after the :
-            weights[i]=Integer.parseInt(indexAndWeight[1]);
-        }
-
-        //finds the max weight
-        int maxWeight = weights[0];
-        for(int i = 1; i<weights.length;i++){
-            if(weights[i]>maxWeight) maxWeight=weights[i];
-        }
-
-        //only adds properties with weights within 7 of the max weight
-        for(int i = 0; i<indices.length;i++){
-            if(maxWeight-weights[i]<7){
-                userPreference.add(Properties.values()[i]);
+        for (String index : indices) {
+            int i = Integer.parseInt(index);
+            for (Properties property : Properties.values()) {
+                if (property.getIndex() == i) {
+                    userPreference.add(property);
+                }
             }
-
-        }
-
-
-        return userPreference;
-    }
-
-    /**
-     * makes a map with the preferences mapped to the weights of each pereferenc for a
-     * @param string of preferences
-     * @return
-     */
-    public static Map<Properties, Integer> stringToPreferencesAndWeights(String string){
-        Map<Properties, Integer> userPreference = new HashMap<Properties,Integer>();
-        String[] indices = string.split(",");
-        int[] intIndicies = new int[indices.length];
-        int[] weights = new int[indices.length];
-        String index = indices[0];
-        for ( int i = 0; i<indices.length; i++) {
-            index = indices[i];
-            String[] indexAndWeight = index.split(":");
-            //index is the first part
-            intIndicies[i]=Integer.parseInt(indexAndWeight[0]);
-            //weight is after the :
-            weights[i]=Integer.parseInt(indexAndWeight[1]);
-        }
-
-        //finds the max weight
-        int maxWeight = weights[0];
-        for(int i = 1; i<weights.length;i++){
-            if(weights[i]>maxWeight) maxWeight=weights[i];
-        }
-
-        //adds all properties and weights
-        for(int i = 0; i<indices.length;i++){
-
-                userPreference.put(Properties.values()[i], weights[i]);
-
-
         }
         return userPreference;
-    }
-
-    /**
-     * makes a string like preference:weight,preference:weight
-     * @param userPreference
-     * @return
-     */
-    public static String preferencWeightMapToString(Map<Properties, Integer> userPreference) {
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<Properties,Integer> entry : userPreference.entrySet()) {
-            sb.append(entry.getKey().getIndex());
-            sb.append(":"+entry.getValue()+",");
-        }
-        // this part cuts off the last comma
-        if (sb.length() > 0) {
-            sb.setLength(sb.length() - 1);
-        }
-        return sb.toString();
-    }
-    /**
-     * adds 2 to the value of the map for each property they share, subtracts 1 for each they don't share, removes property if property is 1 and they don't share it
-     * makes a concurrent modification exception
-     */
-
-    public static void updatePrefWeightHashmapWithCoffee(Map<Properties,Integer> map, Coffee coffee){
-        //to avoid concurrent access exceptions, makes arraylists with lists of the properties to change after going through the hashmap
-        ArrayList<Properties> inc = new ArrayList<>(), dec = new ArrayList<>();
-
-        for(Map.Entry<Properties, Integer> i : map.entrySet()){
-            if(coffee.getCoffeeProperties().contains(i.getKey())){
-                inc.add(i.getKey());
-                //map.replace(i.getKey(), i.getValue()+2);
-            }else{
-                //if(i.getValue()>1){
-                    dec.add(i.getKey());
-                    //map.replace(i.getKey(), i.getValue()-1);
-               // }else{
-                 //   map.remove(i.getKey());
-                //}
-            }
-
-
-        }
-
-        for(Properties i : inc){
-            map.replace(i, map.get(i)+2);
-        }
-        for(Properties i : inc){
-            if(map.get(i)>=1){
-                map.remove(i);
-            }else{
-                map.replace(i, map.get(i)-1);
-            }
-
-        }
     }
 }
