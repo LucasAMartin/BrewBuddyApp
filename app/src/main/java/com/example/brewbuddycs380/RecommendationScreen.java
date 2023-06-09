@@ -18,7 +18,7 @@ import java.util.Set;
  */
 public class RecommendationScreen extends AppCompatActivity {
 
-    private Coffee lastRecommendation;
+    private Coffee currentRecommendation;
 
     /**
      * Called when the activity is created.
@@ -48,6 +48,7 @@ public class RecommendationScreen extends AppCompatActivity {
 
         Set<Properties> userPreferences = CoffeeRecommender.stringToUserPreference(userPreferencesString);
         Coffee topChoice = CoffeeRecommender.recommendTopCoffee(userPreferences);
+        currentRecommendation = topChoice;
         Coffee[] top5Choices = CoffeeRecommender.recommend5Coffee(userPreferences);
         String preferences = CoffeeRecommender.getPreferencesString(userPreferences);
 
@@ -72,11 +73,11 @@ public class RecommendationScreen extends AppCompatActivity {
             Random rand = new Random();
             int randomChoice = rand.nextInt(5);
             Coffee randomCoffee = top5Choices[randomChoice];
-            while (randomCoffee.equals(lastRecommendation)) {
+            while (randomCoffee.equals(currentRecommendation)) {
                 randomChoice = rand.nextInt(5);
                 randomCoffee = top5Choices[randomChoice];
             }
-            lastRecommendation = randomCoffee;
+            currentRecommendation = randomCoffee;
             ratingBar.setRating(3 + (2*(rand.nextFloat())));
             if(preferences.isEmpty()||preferences.equals(" ")){
                 recommendation.setText(randomCoffee.getName());
@@ -89,7 +90,7 @@ public class RecommendationScreen extends AppCompatActivity {
 
         //adds whatever coffee is recommended on the main screen to the cart
         findViewById(R.id.addToCart).setOnClickListener(v-> {
-            UserService.shoppingCart.add(lastRecommendation);
+            UserService.addToCart(currentRecommendation);
         });
 
         //goes to the cart

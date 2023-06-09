@@ -5,9 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:autofillHints="password"
-    android:background="@drawable/background"
-    android:orientation="vertical"
-    tools:context=".MainActivity">
+    android:orientation="vertical" >
 
     <EditText
         android:id="@+id/username"
@@ -88,7 +86,5 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.085"
         app:srcCompat="@drawable/dark_logo" />
-
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>
