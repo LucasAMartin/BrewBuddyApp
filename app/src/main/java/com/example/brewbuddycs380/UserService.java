@@ -274,7 +274,7 @@ public class UserService {
 
     /**
      * adds coffee to the cart
-     * @param coffee
+     * @param coffee coffe object to add to cart
      */
     public static void addToCart(Coffee coffee){
         shoppingCart.add(coffee);
@@ -282,7 +282,7 @@ public class UserService {
 
     /**
      * updates the user's preferences with the coffee's they selected.
-     * @return
+     * @return true if checkout works, false if cart is empty
      */
     public static boolean checkOut(){
         if(shoppingCart.size()==0)
