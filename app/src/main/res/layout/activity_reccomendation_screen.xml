@@ -15,16 +15,17 @@
         android:background="@drawable/rounded_edges"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0">
+        app:layout_constraintVertical_bias="0.996">
 
 
         <TextView
             android:id="@+id/recommendation"
             android:layout_width="match_parent"
-            android:layout_marginHorizontal="20dp"
             android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
             android:fontFamily="@font/roboto_bold"
             android:text="@string/recommendation"
             android:textAppearance="?attr/textAppearanceHeadline6"
@@ -52,8 +53,8 @@
         <TextView
             android:id="@+id/description"
             android:layout_width="match_parent"
-            android:layout_marginHorizontal="20dp"
             android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
             android:fontFamily="@font/roboto_bold"
             android:text="@string/description_of_the_coffee_recommendation"
             android:textSize="18sp"
@@ -97,14 +98,14 @@
             android:layout_width="wrap_content"
             android:layout_height="24dp"
             android:layout_marginEnd="24dp"
+            android:contentDescription="@string/image_of_recommended_coffee"
             android:src="@drawable/favorite"
             app:layout_constraintBottom_toTopOf="@+id/recommendation"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.761"
-            app:tint="@color/pink"
-            android:contentDescription="@string/image_of_recommended_coffee" />
+            app:tint="@color/pink" />
 
         <TextView
             android:id="@+id/surprise"

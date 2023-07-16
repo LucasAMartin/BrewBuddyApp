@@ -8,6 +8,9 @@ Much like Amazon’s recommendation features, which according to an article by M
 
 Also, it was just a fun idea to develop to see how this would all work together on a smaller scale. As mentioned in the “Possible Features Addition” this app could be easily extended to include food by just replacing the algorithm choices, making it a great template to use for any list of items a smaller store might be wanting to sell.
 
+## Video Demo (Youtube)
+[![Video Demo](https://img.youtube.com/vi/PAzyWQjzaU8/0.jpg)](https://youtu.be/PAzyWQjzaU8)
+
 ## User Guide
 
 ### Requirements
@@ -15,7 +18,7 @@ Also, it was just a fun idea to develop to see how this would all work together 
 - Valid internet connection for connection to the database
 
 ### Find the APK on GitHub
-In the BrewBuddyC380 repository, look for the APK file in the repository's file list: [BrewBuddy.apk](https://github.com/BrewBuddyC380/BrewBuddy.apk)
+In the BrewBuddyApp repository, look for the APK file in the repository's file list: [BrewBuddy.apk](https://github.com/BrewBuddyC380/BrewBuddy.apk)
 
 ### Download the APK file
 1. On the APK file's detail page, click on the "Download raw file" button to download the APK file to your computer.

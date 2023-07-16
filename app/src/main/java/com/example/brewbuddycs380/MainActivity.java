@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+
         // Change the status bar color to enhance the visual appearance
         if (Build.VERSION.SDK_INT >= 21) {
             getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.statusbar_main));
@@ -48,17 +49,4 @@ public class MainActivity extends AppCompatActivity {
         fragmentTransaction.replace(R.id.fragment_container, newFragment);
         fragmentTransaction.commit();
     }
-
-    /**
-     * Shows the overlay fragment.
-     */
-    private void showLogin() {
-        // Create a new instance of the OverlayFragment
-        LoginFragment overlayFragment = new LoginFragment();
-
-        // Add the fragment to the 'fragment_container' FrameLayout
-        getSupportFragmentManager().beginTransaction()
-                .add(R.id.fragment_container, overlayFragment).commit();
-    }
-
 }
